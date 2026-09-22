@@ -26,15 +26,14 @@ ARG ALPINE_DIGEST
 # Standard OCI annotations, plus a project-specific set recording exactly
 # which Alpine/hylafaxplus/iaxmodem build produced this image and where
 # each package's own build recipe lives - see docs/BUILD.md for the same
-# provenance chain in prose. image.version is the hylafax+ version, per the
-# OCI spec's own definition of that field ("version of the packaged
-# software") - it is NOT this repo's own release version (see the image's
-# Docker tags for that).
+# provenance chain in prose. image.version matches the composite tag this
+# same build gets published under (docs/BUILD.md#tagging) - not just the
+# hylafax+ version - so the label and the pullable tag never disagree.
 LABEL org.opencontainers.image.title="hylafax+" \
       org.opencontainers.image.description="hylafax+ fax server on Alpine Linux, driven entirely by docker-compose environment variables" \
       org.opencontainers.image.source="https://github.com/switzer60/docker-hylafax-plus" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.version="${HYLAFAX_PKG_VERSION}" \
+      org.opencontainers.image.version="alpine-${ALPINE_VERSION}_hylafaxplus-${HYLAFAX_PKG_VERSION}_iaxmodem-${IAXMODEM_PKG_VERSION}" \
       org.opencontainers.image.base.name="alpine:${ALPINE_VERSION}" \
       org.opencontainers.image.base.digest="${ALPINE_DIGEST}" \
       io.github.switzer60.docker-hylafax-plus.alpine-version="${ALPINE_VERSION}" \

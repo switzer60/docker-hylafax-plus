@@ -80,10 +80,9 @@ docker inspect ghcr.io/switzer60/docker-hylafax-plus:latest \
     --format '{{json .Config.Labels}}' | python3 -m json.tool
 ```
 
-`org.opencontainers.image.version` is the hylafax+ version specifically
-(per the OCI spec's own definition of that field, "version of the packaged
-software") - it is not this repo's own release version; see the image's
-Docker tags for that. `org.opencontainers.image.base.name`/`.base.digest`
+`org.opencontainers.image.version` matches the composite tag this same
+build is published under (see "Tagging" below) - the label and the
+pullable tag always agree. `org.opencontainers.image.base.name`/`.base.digest`
 are the Alpine base pin, standard OCI keys. The
 `io.github.switzer60.docker-hylafax-plus.*` labels are this project's own
 (no standard OCI key covers "which of two packages installed alongside
