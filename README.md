@@ -62,7 +62,10 @@ environment.
   `faxsetup(8C)` transcript used at build time, and the honest limits of
   what "reproducible" means here are documented in
   [docs/BUILD.md](docs/BUILD.md) - not just a Dockerfile you have to
-  reverse-engineer.
+  reverse-engineer. Tags say what they mean:
+  `alpine-3.22_hylafaxplus-7.0.10-r0_iaxmodem-1.3.4-r0` tells you exactly
+  what's inside without opening a browser - see
+  [docs/BUILD.md#tagging](docs/BUILD.md#tagging).
 - **Multi-arch**: `linux/amd64` and `linux/arm64` (Raspberry Pi, Apple
   Silicon under Docker Desktop, ARM servers), built and smoke-tested
   separately for each architecture, then published as a single manifest

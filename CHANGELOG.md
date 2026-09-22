@@ -37,6 +37,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   into a given image, plus a direct link to each package's own APKBUILD,
   so `docker inspect` alone (no repo checkout needed) answers "what's
   actually inside this image" - see docs/BUILD.md.
+- Replaced the bare `<hylafax_pkg_version>` published tag (e.g. `7.0.10-r0`)
+  with a composite `alpine-<ver>_hylafaxplus-<ver>_iaxmodem-<ver>` tag. The
+  old tag silently moved on every commit, not just real package version
+  bumps - a real bug, since anyone pinning it for stability was actually
+  tracking `latest` under a misleading name. See docs/BUILD.md#tagging.
 
 ### Pinned
 - Alpine `3.22` (by digest).

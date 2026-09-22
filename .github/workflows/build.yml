@@ -25,7 +25,7 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     outputs:
-      hylafax_pkg_version: ${{ steps.versions.outputs.hylafax_pkg_version }}
+      version_tag: ${{ steps.versions.outputs.version_tag }}
       sha: ${{ steps.sha.outputs.sha }}
     steps:
       - name: Checkout
@@ -40,7 +40,11 @@ jobs:
         id: versions
         run: |
           . docker/versions.env
-          echo "hylafax_pkg_version=${HYLAFAX_PKG_VERSION}" >> "$GITHUB_OUTPUT"
+          # Encodes the exact package combo baked in - see
+          # docs/BUILD.md#tagging for why this replaced a bare
+          # HYLAFAX_PKG_VERSION tag (which silently moved on every commit,
+          # not just real package bumps).
+          echo "version_tag=alpine-${ALPINE_VERSION}_hylafaxplus-${HYLAFAX_PKG_VERSION}_iaxmodem-${IAXMODEM_PKG_VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Short SHA
         id: sha
@@ -147,7 +151,7 @@ jobs:
         run: |
           image="ghcr.io/${{ github.repository }}"
           sha="${{ needs.verify.outputs.sha }}"
-          version="${{ needs.verify.outputs.hylafax_pkg_version }}"
+          version="${{ needs.verify.outputs.version_tag }}"
           amd64="${image}:sha-${sha}-amd64"
           arm64="${image}:sha-${sha}-arm64"
 

@@ -112,6 +112,34 @@ forever. If you need that stronger guarantee, mirror the `.apk` files
 themselves - not currently done here, to keep the build simple; flag it
 if you want it added.
 
+## Tagging
+
+Three tags get published, each answering a different question:
+
+| Tag | Example | Answers |
+|---|---|---|
+| `latest` | `latest` | "give me whatever's current on `main`" - floating, moves on every push. |
+| `sha-<short-sha>` | `sha-c9339754c201` | "give me exactly this commit" - immutable, the real reproducibility pin (see above). |
+| `alpine-<ver>_hylafaxplus-<ver>_iaxmodem-<ver>` | `alpine-3.22_hylafaxplus-7.0.10-r0_iaxmodem-1.3.4-r0` | "what's actually inside, at a glance" - built directly from the three `docker/versions.env` pins, no separate release process to remember. |
+
+That third tag replaced an earlier design that just tagged images
+`<hylafax_pkg_version>` (e.g. `7.0.10-r0`) on its own. That was a real bug,
+not just an aesthetic choice: since `HYLAFAX_PKG_VERSION` rarely changes but
+plenty of other commits do (entrypoint fixes, new env vars, ...), that tag
+silently moved on *every* push to `main` regardless of whether the hylafax+
+version actually changed - anyone who pinned `:7.0.10-r0` expecting
+stability was actually tracking `latest` under a misleading name.
+
+The current composite tag has the same underlying property - it still
+moves if you push a change that doesn't touch any of the three pins in
+`docker/versions.env` - but it's now honest about what it is: a
+human-readable label for "this package combination," not a strict content
+pin. Anyone who needs the latter uses `sha-<short-sha>`. Because these
+three packages update infrequently in practice (see the pins table above),
+the composite tag mostly does behave like a stable release tag; it's just
+not *guaranteed* to, and the tag name says so by construction instead of
+by convention.
+
 ## Architectures
 
 The public image (`ghcr.io/switzer60/docker-hylafax-plus`, published by
