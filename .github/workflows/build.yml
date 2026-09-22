@@ -1,9 +1,17 @@
 name: Build, test, and publish
 
 # Public counterpart to ci/Jenkinsfile: same build -> verify -> smoke test ->
-# scan -> SBOM -> push shape, but running on GitHub Actions and publishing
-# to ghcr.io instead of the internal Forgejo registry. See docs/BUILD.md and
-# ci/JENKINS.md for why the internal pipeline exists separately.
+# scan -> SBOM -> push shape, but running on GitHub Actions, multi-arch
+# (linux/amd64 + linux/arm64), and publishing to ghcr.io instead of the
+# internal Forgejo registry. See docs/BUILD.md and ci/JENKINS.md for why the
+# internal pipeline exists separately.
+#
+# Shape: one job per architecture builds, smoke-tests (under QEMU emulation
+# for arm64 - this image is apk-install-only, no compilation, so emulation
+# overhead is small), scans, and pushes an arch-specific tag; a final job
+# merges the two into proper multi-arch manifest lists with
+# `docker buildx imagetools create` (no rebuild - just combines what's
+# already pushed and already passed its own smoke test).
 on:
   push:
     branches: [main]
@@ -16,8 +24,11 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
+    outputs:
+      hylafax_pkg_version: ${{ steps.versions.outputs.hylafax_pkg_version }}
+      sha: ${{ steps.sha.outputs.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,60 +44,80 @@ jobs:
           . docker/versions.env
           echo "hylafax_pkg_version=${HYLAFAX_PKG_VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Compute image tags
-        id: tags
-        run: |
-          image="ghcr.io/${{ github.repository }}"
-          sha="${GITHUB_SHA:0:12}"
-          {
-            echo "primary=${image}:sha-${sha}"
-            echo "version=${image}:${{ steps.versions.outputs.hylafax_pkg_version }}"
-            echo "latest=${image}:latest"
-          } >> "$GITHUB_OUTPUT"
+      - name: Short SHA
+        id: sha
+        run: echo "sha=${GITHUB_SHA:0:12}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+          - platform: linux/arm64
+            arch: arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ matrix.platform }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image
+      - name: Compute per-arch tag
+        id: tag
+        run: |
+          image="ghcr.io/${{ github.repository }}"
+          echo "tag=${image}:sha-${{ needs.verify.outputs.sha }}-${{ matrix.arch }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build image (${{ matrix.platform }})
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile
+          platforms: ${{ matrix.platform }}
           load: true
-          tags: ${{ steps.tags.outputs.primary }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.tag.outputs.tag }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
 
-      - name: Smoke test
+      - name: Smoke test (${{ matrix.platform }})
         run: |
           chmod +x tests/smoke-test.sh docker/entrypoint.sh docker/healthcheck.sh
-          IMAGE=${{ steps.tags.outputs.primary }} ./tests/smoke-test.sh
+          IMAGE=${{ steps.tag.outputs.tag }} ./tests/smoke-test.sh
 
-      - name: Vulnerability scan (Trivy)
+      - name: Vulnerability scan (Trivy, ${{ matrix.platform }})
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ steps.tags.outputs.primary }}
+          image-ref: ${{ steps.tag.outputs.tag }}
           format: table
           exit-code: '1'
           severity: CRITICAL
           ignore-unfixed: true
 
-      - name: Generate SBOM
+      - name: Generate SBOM (${{ matrix.platform }})
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ steps.tags.outputs.primary }}
+          image: ${{ steps.tag.outputs.tag }}
           format: cyclonedx-json
-          output-file: sbom.cdx.json
+          output-file: sbom-${{ matrix.arch }}.cdx.json
           upload-artifact: false
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: sbom
-          path: sbom.cdx.json
+          name: sbom-${{ matrix.arch }}
+          path: sbom-${{ matrix.arch }}.cdx.json
 
-      # Everything above runs on PRs too, as a gate. Only a push to main
-      # (never a PR from a fork) gets as far as publishing.
+      # Everything above runs on PRs too, as a gate, for both architectures.
+      # Only a push to main (never a PR from a fork) gets as far as pushing.
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -95,11 +126,38 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push
+      - name: Push per-arch image
         if: github.event_name != 'pull_request'
+        run: docker push ${{ steps.tag.outputs.tag }}
+
+  publish-manifest:
+    needs: [verify, build]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create and push multi-arch manifest lists
         run: |
-          docker push "${{ steps.tags.outputs.primary }}"
-          docker tag "${{ steps.tags.outputs.primary }}" "${{ steps.tags.outputs.version }}"
-          docker push "${{ steps.tags.outputs.version }}"
-          docker tag "${{ steps.tags.outputs.primary }}" "${{ steps.tags.outputs.latest }}"
-          docker push "${{ steps.tags.outputs.latest }}"
+          image="ghcr.io/${{ github.repository }}"
+          sha="${{ needs.verify.outputs.sha }}"
+          version="${{ needs.verify.outputs.hylafax_pkg_version }}"
+          amd64="${image}:sha-${sha}-amd64"
+          arm64="${image}:sha-${sha}-arm64"
+
+          docker buildx imagetools create -t "${image}:sha-${sha}" "${amd64}" "${arm64}"
+          docker buildx imagetools create -t "${image}:${version}" "${amd64}" "${arm64}"
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            docker buildx imagetools create -t "${image}:latest" "${amd64}" "${arm64}"
+          fi
+
+      - name: Inspect published manifest
+        run: docker buildx imagetools inspect "ghcr.io/${{ github.repository }}:sha-${{ needs.verify.outputs.sha }}"

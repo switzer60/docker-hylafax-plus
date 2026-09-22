@@ -63,6 +63,11 @@ environment.
   what "reproducible" means here are documented in
   [docs/BUILD.md](docs/BUILD.md) - not just a Dockerfile you have to
   reverse-engineer.
+- **Multi-arch**: `linux/amd64` and `linux/arm64` (Raspberry Pi, Apple
+  Silicon under Docker Desktop, ARM servers), built and smoke-tested
+  separately for each architecture, then published as a single manifest
+  list - `docker pull` gets the right one automatically, no `--platform`
+  flag needed.
 - **CI'd, publicly**: [.github/workflows/build.yml](.github/workflows/build.yml)
   builds, smoke-tests (boots the image and exercises the real protocol),
   scans, generates an SBOM, and publishes to `ghcr.io/switzer60/docker-hylafax-plus`
@@ -82,7 +87,7 @@ environment.
 | `.env.example` | Copy to `.env` and edit. |
 | `config-overrides/` | Drop files here to override any generated config verbatim (see docs/CONFIGURATION.md). |
 | `docs/` | Architecture, full config reference, modem setup, build/reproducibility notes - for anyone using the image. |
-| `.github/workflows/build.yml` | Public GitHub Actions pipeline: build → verify → smoke test → scan → SBOM → publish to `ghcr.io`. |
+| `.github/workflows/build.yml` | Public GitHub Actions pipeline: build → verify → smoke test → scan → SBOM → publish to `ghcr.io`, for `linux/amd64` + `linux/arm64`. |
 | `ci/` | Jenkinsfile + its setup checklist - the internal counterpart, for whoever maintains that private mirror. See ["For maintainers"](#for-maintainers-the-ci-pipeline) below. |
 | `tests/smoke-test.sh` | The real end-to-end test Jenkins (and you, locally) runs against a built image. |
 | `scripts/check-versions.sh` | CI guard against version-pin drift. |

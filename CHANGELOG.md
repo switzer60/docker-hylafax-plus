@@ -39,6 +39,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   documented as the private counterpart. `docker-compose.yml`'s default
   registry flipped accordingly: GHCR (public) by default, Forgejo
   (internal) via `.env` override.
+- Multi-arch publishing: `.github/workflows/build.yml` now builds, smoke
+  tests, and pushes `linux/amd64` and `linux/arm64` separately (arm64
+  under QEMU emulation), then merges them into proper multi-arch manifest
+  lists with `docker buildx imagetools create` - no Dockerfile changes
+  needed, since `hylafaxplus`/`iaxmodem` are published by Alpine for both
+  architectures and the pinned base image digest was already multi-arch.
 
 ### Pinned
 - Alpine `3.22` (by digest).

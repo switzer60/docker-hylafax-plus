@@ -90,6 +90,34 @@ guarantee, mirror the `.apk` files themselves (e.g. into a Forgejo generic
 package registry) - not currently done here, to keep the build simple; flag
 it if you want it added.
 
+## Architectures
+
+The public image (`ghcr.io/switzer60/docker-hylafax-plus`, published by
+`.github/workflows/build.yml`) is multi-arch: `linux/amd64` and
+`linux/arm64`, published as a single manifest list - `docker pull`/
+`docker compose up` picks the right one automatically. This works because
+nothing in the build compiles anything: `hylafaxplus` and `iaxmodem` are
+both published by Alpine for `x86_64`, `aarch64`, `armv7`, and `armhf`
+(checked directly against `v3.22/main` and `v3.22/community`'s
+`APKINDEX` before this was wired up), and the pinned `ALPINE_DIGEST` above
+is itself a multi-platform OCI image index, not a single-arch manifest -
+`docker manifest inspect` on it shows `amd64`, `arm/v6`, and `arm64`
+children. `docker/Dockerfile` needed zero changes for multi-arch; only the
+CI pipeline did.
+
+The GitHub Actions pipeline builds and smoke-tests each architecture
+separately (`arm64` via QEMU emulation on the `amd64` runner -
+`docker/setup-qemu-action`, since this image is apk-install-only with
+nothing to compile, so emulation overhead is minor), pushes each as its
+own `:sha-<sha>-<arch>` tag, then a final job merges them into the real
+published tags with `docker buildx imagetools create` - a manifest-list
+merge of already-pushed, already-tested images, not a rebuild.
+
+`ci/Jenkinsfile` (the internal Forgejo pipeline) and a plain `docker build`
+locally remain single-arch, building for whatever the Docker daemon's host
+platform is - that's an intentional scope difference; flag it if you want
+the internal pipeline made multi-arch too.
+
 ## The one-time `faxsetup` step, in full
 
 `faxsetup(8C)` is an interactive script. Rather than reimplementing its
