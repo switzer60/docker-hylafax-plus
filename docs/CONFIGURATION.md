@@ -41,20 +41,18 @@ Anything not listed here is still reachable: see
 | Variable | Default | Meaning |
 |---|---|---|
 | `HYLAFAX_ADMIN_USER` | `admin` | Username provisioned into `etc/hosts.hfaxd` with administrative rights. |
-| `HYLAFAX_ADMIN_PASSWORD` | *(required)* | Plaintext at deploy time only - stored as a salted SHA-512 crypt hash (`openssl passwd -6`) in `etc/hosts.hfaxd`, mode `0600`, owned by `uucp`. Never logged. |
+| `HYLAFAX_ADMIN_PASSWORD` | *(generated)* | If unset, a random password is generated on first boot, printed once to `docker compose logs`, and persisted (in the `hylafax_spool` volume) so later restarts keep the same one instead of rotating it. Set this to pin a password explicitly - explicit always wins and re-applies on every boot, so it's also how you rotate one. Stored only as a salted SHA-512 crypt hash (`openssl passwd -6`) in `etc/hosts.hfaxd`, mode `0600`, owned by `uucp`; the plaintext is never written anywhere except that one log line. |
 | `HYLAFAX_ADMIN_ADMINWORD` | *(same as password)* | Separate password required for `ADMIN` (privileged) commands, if you want it distinct from login. |
 | `HYLAFAX_ALLOW_HOSTS` | *(empty)* | Comma-separated extra `hosts.hfaxd` entries (regexes or CIDRs), appended after the admin entry. `127.0.0.1` and `::1` are always trusted. See `hosts.hfaxd(5F)` for the pattern syntax. |
 
-If `HYLAFAX_ADMIN_USER`/`HYLAFAX_ADMIN_PASSWORD` are unset, only localhost is
-trusted - useful when another container on the same compose network submits
-jobs via a mounted client rather than over the network.
-
 ## Modems
 
-`MODEM_COUNT` controls how many `MODEM_<N>_*` blocks (N = 1..MODEM_COUNT)
-the entrypoint looks for. A slot with no `MODEM_<N>_DEVICE` set is skipped
-with a logged warning, so you can leave higher-numbered blocks defined but
-inactive.
+`MODEM_COUNT` (default `0`) controls how many `MODEM_<N>_*` blocks
+(N = 1..MODEM_COUNT) the entrypoint looks for. At `0`, `faxq`/`hfaxd` still
+start with no modem at all - useful for a first look at a freshly pulled
+image before wiring anything up. A slot with no `MODEM_<N>_DEVICE` set is
+skipped with a logged warning, so you can leave higher-numbered blocks
+defined but inactive.
 
 | Variable | Default | Meaning |
 |---|---|---|

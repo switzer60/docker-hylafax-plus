@@ -1,0 +1,21 @@
+# Auto-merged by `docker compose` whenever this file sits next to
+# docker-compose.yml - no flag needed. Adds a local build as an alternative
+# to pulling from the registry, for testing a Dockerfile/entrypoint.sh
+# change before it's pushed. `docker compose build` uses this; plain
+# `docker compose pull` ignores it and just pulls `image:` from
+# docker-compose.yml. Delete this file (or run with
+# `docker compose -f docker-compose.yml up`) to force a pull even when it's
+# present. See docs/BUILD.md.
+services:
+  fax:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        # Pin exactly what gets built. Bump these deliberately, in step with
+        # docker/versions.env - see docs/BUILD.md.
+        ALPINE_VERSION: ${ALPINE_VERSION:-3.22}
+        ALPINE_DIGEST: ${ALPINE_DIGEST:-sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8}
+        HYLAFAX_PKG_VERSION: ${HYLAFAX_PKG_VERSION:-7.0.10-r0}
+        IAXMODEM_PKG_VERSION: ${IAXMODEM_PKG_VERSION:-1.3.4-r0}
+    image: hylafax-plus:local

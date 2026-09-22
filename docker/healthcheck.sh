@@ -16,7 +16,7 @@ if [[ "${HFAXD_ENABLE:-yes}" == "yes" ]]; then
         || fail "hfaxd is not accepting connections on port ${HFAXD_PORT:-4559}"
 fi
 
-count="${MODEM_COUNT:-1}"
+count="${MODEM_COUNT:-0}"
 for n in $(seq 1 "${count}"); do
     devvar="MODEM_${n}_DEVICE"
     devid="${!devvar:-}"

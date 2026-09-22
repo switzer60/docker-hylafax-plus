@@ -1,8 +1,23 @@
 # hylafax+ on Alpine - reference docker-compose.
 #
+# Default path: pull the image Jenkins already built and pushed - no local
+# build needed. `docker compose up -d` after `docker login` to the registry
+# (private image; see ci/JENKINS.md) is enough to get a running container.
+#
+# Building locally instead (e.g. to test a Dockerfile/entrypoint.sh change
+# before it's pushed) is one file away: docker-compose.override.yml adds a
+# `build:` block that docker compose merges in automatically whenever it's
+# present in the same directory - no flag needed, just
+# `docker compose build && docker compose up -d`. See docs/BUILD.md.
+#
 # Every runtime-tunable piece of hylafax+ that the entrypoint understands is
 # exposed here as an environment variable. Copy .env.example to .env, edit
 # it, and `docker compose up -d`. Full reference: docs/CONFIGURATION.md.
+# Nothing below is required to get a container running - HYLAFAX_ADMIN_PASSWORD
+# is optional (a random one is generated and printed to `docker compose logs`
+# on first boot if you don't set one) and MODEM_COUNT defaults to 0, so a
+# bare `docker compose up -d` with no .env at all works; you'll want to set
+# at least one modem before this is useful as an actual fax server.
 #
 # Anything not covered by an env var can still be set: drop a file into
 # ./config-overrides/ (mounted at /config-overrides) named `config`,
@@ -12,20 +27,7 @@
 # own env var.
 services:
   fax:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-      args:
-        # Pin exactly what gets built. Bump these deliberately; see
-        # docs/BUILD.md for how new pins are verified before landing here.
-        ALPINE_VERSION: ${ALPINE_VERSION:-3.22}
-        ALPINE_DIGEST: ${ALPINE_DIGEST:-sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8}
-        HYLAFAX_PKG_VERSION: ${HYLAFAX_PKG_VERSION:-7.0.10-r0}
-        IAXMODEM_PKG_VERSION: ${IAXMODEM_PKG_VERSION:-1.3.4-r0}
-    # Or, once Jenkins has pushed a build to your registry, skip the local
-    # build entirely and just pull it:
-    # image: [redacted]/OWNER/hylafax-plus:7.0.10
-    image: hylafax-plus:local
+    image: ${REGISTRY:-[redacted]}/${IMAGE_NAMESPACE:-switzer60}/hylafax-plus:${IMAGE_TAG:-latest}
     hostname: fax
     restart: unless-stopped
     stop_grace_period: 15s
@@ -58,20 +60,26 @@ services:
       HFAXD_BIND_ADDRESS: ${HFAXD_BIND_ADDRESS:-0.0.0.0}
 
       # --- Access control --------------------------------------------------
-      # Bootstraps one administrative user into etc/hosts.hfaxd. Leave unset
-      # to trust only localhost (::1 / 127.0.0.1), e.g. when only other
-      # containers on FAX_NET submit jobs via a mounted client.
+      # Bootstraps one administrative user into etc/hosts.hfaxd. Leave
+      # HYLAFAX_ADMIN_PASSWORD unset and the entrypoint generates one on
+      # first boot and prints it once to `docker compose logs` - the same
+      # generated password survives container restarts (it's persisted in
+      # the hylafax_spool volume), so restarting never locks you out or
+      # silently rotates it. Set the var explicitly to pin or change it.
       HYLAFAX_ADMIN_USER: ${HYLAFAX_ADMIN_USER:-admin}
-      HYLAFAX_ADMIN_PASSWORD: ${HYLAFAX_ADMIN_PASSWORD:?set HYLAFAX_ADMIN_PASSWORD in .env}
+      HYLAFAX_ADMIN_PASSWORD: ${HYLAFAX_ADMIN_PASSWORD:-}
       HYLAFAX_ADMIN_ADMINWORD: ${HYLAFAX_ADMIN_ADMINWORD:-}
       # Comma-separated extra hosts.hfaxd entries, e.g.
       # "192.168.1.0/24,^.*@trusted\\.example\\.com$"
       HYLAFAX_ALLOW_HOSTS: ${HYLAFAX_ALLOW_HOSTS:-}
 
       # --- Modems -----------------------------------------------------------
-      # How many MODEM_<N>_* blocks below are active. Add more blocks and
-      # bump this to scale past 2; the entrypoint loops 1..MODEM_COUNT.
-      MODEM_COUNT: ${MODEM_COUNT:-1}
+      # How many MODEM_<N>_* blocks below are active. 0 (the default) boots
+      # faxq/hfaxd with no modem at all, so you can pull this image and look
+      # around before wiring anything up. Set to 1+ and fill in a MODEM_1_*
+      # block (below) to actually send/receive faxes; add more blocks and
+      # bump this further to scale past 2 - the entrypoint loops 1..MODEM_COUNT.
+      MODEM_COUNT: ${MODEM_COUNT:-0}
 
       # Modem 1 - defaults to a software modem over IAX2/VoIP (iaxmodem),
       # which needs no hardware and works on any host, including this one.

@@ -117,8 +117,10 @@ map the same host device into two compose stacks.
 
 ## Adding more than two modems
 
-`docker-compose.yml` ships `MODEM_COUNT=1` with a commented `MODEM_2_*`
-block as a template. To go further: copy that block, increment the number,
-add a matching `devices:` entry if it's `serial`, and bump `MODEM_COUNT`.
-There's no hard limit in the entrypoint; practical limits are IAX2
-channel/CPU capacity (iaxmodem) or physical ports (serial).
+`docker-compose.yml` ships a `MODEM_1_*` block plus a commented `MODEM_2_*`
+block as a template (`MODEM_COUNT` itself defaults to `0` - see
+docs/CONFIGURATION.md). To go further: copy the `MODEM_2_*` block,
+increment the number, add a matching `devices:` entry if it's `serial`, and
+set `MODEM_COUNT` to match. There's no hard limit in the entrypoint;
+practical limits are IAX2 channel/CPU capacity (iaxmodem) or physical ports
+(serial).

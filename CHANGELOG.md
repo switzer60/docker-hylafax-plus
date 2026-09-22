@@ -21,6 +21,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - Documentation: `docs/ARCHITECTURE.md`, `docs/CONFIGURATION.md`,
   `docs/MODEMS.md`, `docs/BUILD.md`, `ci/JENKINS.md`, `NOTICE.md`.
 - `tests/smoke-test.sh`, `scripts/check-versions.sh`.
+- `docker-compose.yml` now defaults to pulling the image from the Forgejo
+  registry rather than building locally; `docker-compose.override.yml`
+  (auto-merged when present) adds the local `build:` block back for
+  development.
+- First-boot admin password: if `HYLAFAX_ADMIN_PASSWORD` is unset, one is
+  generated, printed once to the container logs, and persisted so restarts
+  don't rotate or lock you out of it. Covered by a dedicated smoke-test
+  scenario (boot, scrape password from logs, restart, confirm it still
+  authenticates).
+- `MODEM_COUNT` now defaults to `0` - `faxq`/`hfaxd` start with no modem
+  configured, so a bare `docker compose up -d` with no `.env` works.
 
 ### Pinned
 - Alpine `3.22` (by digest).

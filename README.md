@@ -6,20 +6,36 @@ A minimal (Alpine Linux), fully documented, reproducible container image for
 editing required for the common cases, with a documented escape hatch for
 everything else.
 
+Pull and go - no build, no required config:
+
 ```sh
-git clone <this repo> && cd hylafax-plus-docker
-cp .env.example .env
-$EDITOR .env   # at minimum: HYLAFAX_ADMIN_PASSWORD, and either point
-               # MODEM_1_IAX_SERVER at your Asterisk box, or switch
-               # MODEM_1_TYPE to `serial` and attach real hardware
+curl -O https://[redacted]/switzer60/hylafax-plus/raw/branch/main/docker-compose.yml
+docker login [redacted]   # private image; see ci/JENKINS.md
 docker compose up -d
 docker compose logs -f
 ```
 
-Within a few seconds you'll have a running fax server: `faxq` (scheduler),
-`hfaxd` (client-server protocol on port 4559), and one modem
-(`faxgetty` + either a software `iaxmodem` or a real device) - all
-supervised in a single container, all configured from the environment.
+That gets you `faxq` (scheduler) and `hfaxd` (client-server protocol, port
+4559) running with no modem configured yet, and an admin password generated
+and printed once to the logs - copy it before you `logs -f` away from it,
+or scroll back. `docker compose logs fax | grep -A2 'generated admin'`
+finds it again later.
+
+To actually send/receive faxes, add a modem:
+
+```sh
+git clone <this repo> && cd hylafax-plus-docker
+cp .env.example .env
+$EDITOR .env   # set MODEM_COUNT=1 and either point MODEM_1_IAX_SERVER at
+               # your Asterisk box, or switch MODEM_1_TYPE to `serial` and
+               # attach real hardware. Set HYLAFAX_ADMIN_PASSWORD here too
+               # if you'd rather pick one than use the generated one.
+docker compose up -d
+```
+
+`faxgetty` (+ either a software `iaxmodem` or a real device) then joins the
+other two, all supervised in the same container, all configured from the
+environment.
 
 ## Why this exists
 

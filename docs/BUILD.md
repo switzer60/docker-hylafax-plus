@@ -156,9 +156,13 @@ re-asking) or fails obviously downstream (missing `etc/config`,
 
 ## Building locally without Jenkins
 
+`docker-compose.override.yml` is what makes this a local build instead of a
+registry pull - `docker compose` merges it in automatically whenever it's
+present next to `docker-compose.yml`, no flag needed:
+
 ```sh
 git clone <this repo> && cd hylafax-plus-docker
-cp .env.example .env        # edit HYLAFAX_ADMIN_PASSWORD at minimum
+cp .env.example .env        # optional - see .env.example; nothing here is required
 docker compose build
 docker compose up -d
 docker compose logs -f
