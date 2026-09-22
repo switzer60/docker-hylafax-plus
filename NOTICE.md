@@ -58,7 +58,7 @@ license, tracked by Alpine's package metadata
 
 For a complete, per-package license and version manifest of a specific
 built image (not just the highlights above), see the `SBOM` stage in
-`Jenkinsfile`, or run locally:
+`ci/Jenkinsfile`, or run locally:
 
 ```sh
 syft hylafax-plus:local -o cyclonedx-json=sbom.json

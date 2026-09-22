@@ -1,7 +1,7 @@
 #!/bin/sh
 # Fails if docker-compose.yml / docker/Dockerfile default build args have
 # drifted from docker/versions.env, the single source of truth. Run in CI
-# (jenkins/Jenkinsfile "Verify" stage) and locally before committing a
+# (ci/Jenkinsfile "Verify" stage) and locally before committing a
 # version bump.
 set -eu
 cd "$(dirname "$0")/.."

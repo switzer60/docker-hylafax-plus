@@ -37,5 +37,5 @@ may be enough on its own.
 ## Pull requests
 
 Jenkins runs `scripts/check-versions.sh` and `tests/smoke-test.sh` against
-every PR build (see `Jenkinsfile` / `docs/JENKINS.md`) - both must pass
+every PR build (see `ci/Jenkinsfile` / `ci/JENKINS.md`) - both must pass
 before merge. There's no other formal process; open a PR against `main`.

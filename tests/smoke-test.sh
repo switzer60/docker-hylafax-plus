@@ -3,7 +3,7 @@
 # with a fake IAX2 server (no real Asterisk needed - iaxmodem's AT-command
 # interface comes up regardless of whether registration succeeds), waits for
 # Docker's own HEALTHCHECK to go healthy, then exercises the hfaxd protocol
-# and faxstat. Exits non-zero on any failure. Used by jenkins/Jenkinsfile
+# and faxstat. Exits non-zero on any failure. Used by ci/Jenkinsfile
 # and safe to run locally: `IMAGE=hylafax-plus:local tests/smoke-test.sh`.
 set -Eeuo pipefail
 

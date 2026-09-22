@@ -42,10 +42,12 @@ supervised in a single container, all configured from the environment.
   what "reproducible" means here are documented in
   [docs/BUILD.md](docs/BUILD.md) - not just a Dockerfile you have to
   reverse-engineer.
-- **CI'd**: a Jenkins pipeline (`Jenkinsfile`) builds, smoke-tests
+- **CI'd**: a Jenkins pipeline (`ci/Jenkinsfile`) builds, smoke-tests
   (boots the image and exercises the real protocol), scans, generates an
   SBOM, and pushes to a container registry (a Forgejo instance, by
-  default) on every push. See [docs/JENKINS.md](docs/JENKINS.md).
+  default) on every push. Lives under `ci/`, separate from everything
+  above - see ["For maintainers"](#for-maintainers-the-ci-pipeline) below;
+  you don't need it to build or run the container yourself.
 
 ## Repository layout
 
@@ -57,8 +59,8 @@ supervised in a single container, all configured from the environment.
 | `docker-compose.yml` | Reference compose file - every env var documented inline. |
 | `.env.example` | Copy to `.env` and edit. |
 | `config-overrides/` | Drop files here to override any generated config verbatim (see docs/CONFIGURATION.md). |
-| `docs/` | Architecture, full config reference, modem setup, build/reproducibility notes, Jenkins setup. |
-| `Jenkinsfile` | CI pipeline: build → verify → smoke test → scan → SBOM → push. |
+| `docs/` | Architecture, full config reference, modem setup, build/reproducibility notes - for anyone using the image. |
+| `ci/` | Jenkinsfile + its setup checklist - for whoever maintains the build pipeline. See ["For maintainers"](#for-maintainers-the-ci-pipeline) below. |
 | `tests/smoke-test.sh` | The real end-to-end test Jenkins (and you, locally) runs against a built image. |
 | `scripts/check-versions.sh` | CI guard against version-pin drift. |
 
@@ -72,10 +74,16 @@ supervised in a single container, all configured from the environment.
   hardware passthrough.
 - [docs/BUILD.md](docs/BUILD.md) - exact build steps, version pins, and
   what reproducibility does/doesn't guarantee here.
-- [docs/JENKINS.md](docs/JENKINS.md) - one-time Jenkins/Forgejo wiring
-  checklist.
 - [NOTICE.md](NOTICE.md) - third-party licenses (hylafax+, Alpine,
   iaxmodem).
+
+## For maintainers: the CI pipeline
+
+Everything above is what you need to build or run the container.
+`ci/Jenkinsfile` and [ci/JENKINS.md](ci/JENKINS.md) are separate: they
+document how *this repo's own* Jenkins/Forgejo pipeline is wired up (build
+→ verify → smoke test → scan → SBOM → push), for whoever maintains that
+pipeline - not required reading to use the image yourself.
 
 ## License
 

@@ -62,7 +62,7 @@ Single source of truth: [`docker/versions.env`](../docker/versions.env).
 same values as their own defaults (so `docker build` with no other files,
 or `docker compose up` with no `.env`, still produce a pinned build).
 [`scripts/check-versions.sh`](../scripts/check-versions.sh) fails CI if
-these drift apart - see the "Verify" stage in `Jenkinsfile`.
+these drift apart - see the "Verify" stage in `ci/Jenkinsfile`.
 
 | Pin | Value | What it guarantees |
 |---|---|---|
@@ -151,7 +151,7 @@ re-asking) or fails obviously downstream (missing `etc/config`,
    per the steps above.
 5. `docker build -f docker/Dockerfile -t hylafax-plus:local .` then
    `IMAGE=hylafax-plus:local ./tests/smoke-test.sh`.
-6. Open a PR. Jenkins runs the same two commands (see `Jenkinsfile`) before
+6. Open a PR. Jenkins runs the same two commands (see `ci/Jenkinsfile`) before
    anything is pushed.
 
 ## Building locally without Jenkins
