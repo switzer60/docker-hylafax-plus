@@ -1,0 +1,6 @@
+.env
+config-overrides/*
+!config-overrides/.gitkeep
+*.log
+trivy-report.txt
+sbom-*.cdx.json
