@@ -72,9 +72,7 @@ environment.
   builds, smoke-tests (boots the image and exercises the real protocol),
   scans, generates an SBOM, and publishes to `ghcr.io/switzer60/docker-hylafax-plus`
   on every push to `main` - anyone can read the run logs on the Actions tab.
-  A separate internal pipeline (`ci/Jenkinsfile`) does the same for a
-  private Forgejo mirror; see ["For maintainers"](#for-maintainers-the-ci-pipeline).
-  Neither is required reading to build or run the container yourself.
+  Not required reading to build or run the container yourself.
 
 ## Repository layout
 
@@ -87,9 +85,8 @@ environment.
 | `.env.example` | Copy to `.env` and edit. |
 | `config-overrides/` | Drop files here to override any generated config verbatim (see docs/CONFIGURATION.md). |
 | `docs/` | Architecture, full config reference, modem setup, build/reproducibility notes - for anyone using the image. |
-| `.github/workflows/build.yml` | Public GitHub Actions pipeline: build → verify → smoke test → scan → SBOM → publish to `ghcr.io`, for `linux/amd64` + `linux/arm64`. |
-| `ci/` | Jenkinsfile + its setup checklist - the internal counterpart, for whoever maintains that private mirror. See ["For maintainers"](#for-maintainers-the-ci-pipeline) below. |
-| `tests/smoke-test.sh` | The real end-to-end test Jenkins (and you, locally) runs against a built image. |
+| `.github/workflows/build.yml` | GitHub Actions pipeline: build → verify → smoke test → scan → SBOM → publish to `ghcr.io`, for `linux/amd64` + `linux/arm64`. |
+| `tests/smoke-test.sh` | The real end-to-end test CI (and you, locally) runs against a built image. |
 | `scripts/check-versions.sh` | CI guard against version-pin drift. |
 
 ## Documentation index
@@ -105,22 +102,9 @@ environment.
 - [NOTICE.md](NOTICE.md) - third-party licenses (hylafax+, Alpine,
   iaxmodem).
 
-## For maintainers: the CI pipeline
-
-Everything above is what you need to build or run the container.
-`.github/workflows/build.yml` is the public pipeline - it runs on GitHub's
-own infrastructure with no extra setup, and its logs are visible to
-anyone on the repo's Actions tab.
-
-`ci/Jenkinsfile` and [ci/JENKINS.md](ci/JENKINS.md) are a separate,
-internal pipeline: they document how *this project's own* Jenkins/Forgejo
-mirror is wired up (build → verify → smoke test → scan → SBOM → push, same
-shape as the public one), for whoever maintains that private pipeline -
-not required reading to use the image yourself.
-
 ## License
 
-The Dockerfile, entrypoint, compose file, and both CI pipelines in this
+The Dockerfile, entrypoint, compose file, and CI pipeline in this
 repository are MIT-licensed - see [LICENSE](LICENSE). hylafax+ itself, and
 the other software this image installs, retain their own licenses - see
 [NOTICE.md](NOTICE.md).

@@ -1,7 +1,7 @@
 # Third-party notices
 
 This repository's own content (Dockerfile, scripts, compose file,
-Jenkinsfile, docs) is MIT-licensed - see [LICENSE](LICENSE). The resulting
+CI workflow, docs) is MIT-licensed - see [LICENSE](LICENSE). The resulting
 container image installs the following third-party software, each under its
 own license:
 
@@ -57,8 +57,8 @@ license, tracked by Alpine's package metadata
 ## Generating a full SBOM
 
 For a complete, per-package license and version manifest of a specific
-built image (not just the highlights above), see the `SBOM` stage in
-`ci/Jenkinsfile`, or run locally:
+built image (not just the highlights above), see the `Generate SBOM` step
+in `.github/workflows/build.yml`, or run locally:
 
 ```sh
 syft hylafax-plus:local -o cyclonedx-json=sbom.json

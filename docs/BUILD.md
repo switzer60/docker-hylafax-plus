@@ -62,7 +62,8 @@ Single source of truth: [`docker/versions.env`](../docker/versions.env).
 same values as their own defaults (so `docker build` with no other files,
 or `docker compose up` with no `.env`, still produce a pinned build).
 [`scripts/check-versions.sh`](../scripts/check-versions.sh) fails CI if
-these drift apart - see the "Verify" stage in `ci/Jenkinsfile`.
+these drift apart - see the "Verify version pins are consistent" step in
+[`.github/workflows/build.yml`](../.github/workflows/build.yml).
 
 | Pin | Value | What it guarantees |
 |---|---|---|
@@ -102,14 +103,14 @@ time passes, at which point `apk add hylafaxplus=7.0.10-r0` fails outright
 rebuilding.
 
 The practical answer to "what's the reproducible artifact" is therefore:
-**the image Jenkins pushes to the Forgejo registry, referenced by its
-digest, is the actual durable, reproducible artifact.** The Dockerfile lets
-you rebuild an equivalent image today or reason precisely about what
-changed if a rebuild ever produces something different; it is not a promise
-that the exact bytes are re-derivable forever. If you need that stronger
-guarantee, mirror the `.apk` files themselves (e.g. into a Forgejo generic
-package registry) - not currently done here, to keep the build simple; flag
-it if you want it added.
+**the image published to `ghcr.io/switzer60/docker-hylafax-plus`,
+referenced by its digest, is the actual durable, reproducible artifact.**
+The Dockerfile lets you rebuild an equivalent image today or reason
+precisely about what changed if a rebuild ever produces something
+different; it is not a promise that the exact bytes are re-derivable
+forever. If you need that stronger guarantee, mirror the `.apk` files
+themselves - not currently done here, to keep the build simple; flag it
+if you want it added.
 
 ## Architectures
 
@@ -134,10 +135,10 @@ own `:sha-<sha>-<arch>` tag, then a final job merges them into the real
 published tags with `docker buildx imagetools create` - a manifest-list
 merge of already-pushed, already-tested images, not a rebuild.
 
-`ci/Jenkinsfile` (the internal Forgejo pipeline) and a plain `docker build`
-locally remain single-arch, building for whatever the Docker daemon's host
-platform is - that's an intentional scope difference; flag it if you want
-the internal pipeline made multi-arch too.
+A plain `docker build` locally remains single-arch, building for whatever
+the Docker daemon's host platform is - that's expected; use
+`docker-compose.override.yml` / `docker build` as usual for local
+development, and let CI produce the multi-arch published image.
 
 ## The one-time `faxsetup` step, in full
 
@@ -200,17 +201,17 @@ re-asking) or fails obviously downstream (missing `etc/config`,
    per the steps above.
 5. `docker build -f docker/Dockerfile -t hylafax-plus:local .` then
    `IMAGE=hylafax-plus:local ./tests/smoke-test.sh`.
-6. Open a PR. Jenkins runs the same two commands (see `ci/Jenkinsfile`) before
-   anything is pushed.
+6. Open a PR. CI runs the same two commands (see
+   `.github/workflows/build.yml`) before anything is published.
 
-## Building locally without Jenkins
+## Building locally without CI
 
 `docker-compose.override.yml` is what makes this a local build instead of a
 registry pull - `docker compose` merges it in automatically whenever it's
 present next to `docker-compose.yml`, no flag needed:
 
 ```sh
-git clone <this repo> && cd hylafax-plus-docker
+git clone https://github.com/switzer60/docker-hylafax-plus && cd docker-hylafax-plus
 cp .env.example .env        # optional - see .env.example; nothing here is required
 docker compose build
 docker compose up -d

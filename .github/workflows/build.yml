@@ -1,10 +1,8 @@
 name: Build, test, and publish
 
-# Public counterpart to ci/Jenkinsfile: same build -> verify -> smoke test ->
-# scan -> SBOM -> push shape, but running on GitHub Actions, multi-arch
-# (linux/amd64 + linux/arm64), and publishing to ghcr.io instead of the
-# internal Forgejo registry. See docs/BUILD.md and ci/JENKINS.md for why the
-# internal pipeline exists separately.
+# Builds, tests, and publishes the image to ghcr.io, multi-arch
+# (linux/amd64 + linux/arm64). See docs/BUILD.md for the full build/
+# reproducibility story.
 #
 # Shape: one job per architecture builds, smoke-tests (under QEMU emulation
 # for arm64 - this image is apk-install-only, no compilation, so emulation
