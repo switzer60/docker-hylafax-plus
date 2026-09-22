@@ -16,11 +16,32 @@ FROM alpine:${ALPINE_VERSION}@${ALPINE_DIGEST}
 
 ARG HYLAFAX_PKG_VERSION=7.0.10-r0
 ARG IAXMODEM_PKG_VERSION=1.3.4-r0
+# ALPINE_VERSION/ALPINE_DIGEST were only in scope for the FROM line above -
+# re-declared (bare, no new default) to pull their existing values into this
+# build stage so the LABELs below can actually reference them; without this
+# they'd silently resolve to empty strings.
+ARG ALPINE_VERSION
+ARG ALPINE_DIGEST
 
+# Standard OCI annotations, plus a project-specific set recording exactly
+# which Alpine/hylafaxplus/iaxmodem build produced this image and where
+# each package's own build recipe lives - see docs/BUILD.md for the same
+# provenance chain in prose. image.version is the hylafax+ version, per the
+# OCI spec's own definition of that field ("version of the packaged
+# software") - it is NOT this repo's own release version (see the image's
+# Docker tags for that).
 LABEL org.opencontainers.image.title="hylafax+" \
       org.opencontainers.image.description="hylafax+ fax server on Alpine Linux, driven entirely by docker-compose environment variables" \
-      org.opencontainers.image.source="https://github.com/OWNER/hylafax-plus-docker" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.source="https://github.com/switzer60/docker-hylafax-plus" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.version="${HYLAFAX_PKG_VERSION}" \
+      org.opencontainers.image.base.name="alpine:${ALPINE_VERSION}" \
+      org.opencontainers.image.base.digest="${ALPINE_DIGEST}" \
+      io.github.switzer60.docker-hylafax-plus.alpine-version="${ALPINE_VERSION}" \
+      io.github.switzer60.docker-hylafax-plus.hylafaxplus-version="${HYLAFAX_PKG_VERSION}" \
+      io.github.switzer60.docker-hylafax-plus.hylafaxplus-apk-source="https://gitlab.alpinelinux.org/alpine/aports/-/blob/v${ALPINE_VERSION}.0/community/hylafaxplus/APKBUILD" \
+      io.github.switzer60.docker-hylafax-plus.iaxmodem-version="${IAXMODEM_PKG_VERSION}" \
+      io.github.switzer60.docker-hylafax-plus.iaxmodem-apk-source="https://gitlab.alpinelinux.org/alpine/aports/-/blob/v${ALPINE_VERSION}.0/main/iaxmodem/APKBUILD"
 
 # hylafaxplus     - the fax server itself (faxq, hfaxd, faxgetty, sendfax, ...)
 # iaxmodem        - software modem over IAX2/VoIP; the default, hardware-free

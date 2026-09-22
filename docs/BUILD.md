@@ -70,6 +70,27 @@ these drift apart - see the "Verify" stage in `ci/Jenkinsfile`.
 | `HYLAFAX_PKG_VERSION` | `7.0.10-r0` | `apk add hylafaxplus=7.0.10-r0` - fails loudly (not silently upgrades) if that exact build is unavailable. |
 | `IAXMODEM_PKG_VERSION` | `1.3.4-r0` | Same guarantee for the iaxmodem package. |
 
+Every one of these pins is also baked into the image itself as an OCI
+label - you don't need this repo checked out to find out what's inside a
+given image, only the image:
+
+```sh
+docker inspect ghcr.io/switzer60/docker-hylafax-plus:latest \
+    --format '{{json .Config.Labels}}' | python3 -m json.tool
+```
+
+`org.opencontainers.image.version` is the hylafax+ version specifically
+(per the OCI spec's own definition of that field, "version of the packaged
+software") - it is not this repo's own release version; see the image's
+Docker tags for that. `org.opencontainers.image.base.name`/`.base.digest`
+are the Alpine base pin, standard OCI keys. The
+`io.github.switzer60.docker-hylafax-plus.*` labels are this project's own
+(no standard OCI key covers "which of two packages installed alongside
+each other" - iaxmodem isn't "the" packaged software, hylafax+ is) and
+include a direct link to each package's own APKBUILD, pinned to the
+matching Alpine version tag, for `hylafaxplus` and `iaxmodem`
+respectively - the same provenance links documented in prose above.
+
 ### The honest limit of this reproducibility
 
 Alpine does not keep an indefinite, queryable archive of every historical

@@ -45,6 +45,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   lists with `docker buildx imagetools create` - no Dockerfile changes
   needed, since `hylafaxplus`/`iaxmodem` are published by Alpine for both
   architectures and the pinned base image digest was already multi-arch.
+- OCI labels now record the exact Alpine/hylafaxplus/iaxmodem versions
+  baked into a given image, plus a direct link to each package's own
+  APKBUILD, so `docker inspect` alone (no repo checkout needed) answers
+  "what's actually inside this image" - see docs/BUILD.md. Also fixed:
+  `org.opencontainers.image.source` was still the placeholder
+  `github.com/OWNER/hylafax-plus-docker`; now the real repo URL.
 
 ### Pinned
 - Alpine `3.22` (by digest).
