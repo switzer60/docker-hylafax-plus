@@ -32,6 +32,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   authenticates).
 - `MODEM_COUNT` now defaults to `0` - `faxq`/`hfaxd` start with no modem
   configured, so a bare `docker compose up -d` with no `.env` works.
+- Public mirror at github.com/switzer60/docker-hylafax-plus, with its own
+  `.github/workflows/build.yml` (build → verify → smoke test → scan →
+  SBOM → push) publishing to `ghcr.io/switzer60/docker-hylafax-plus` on
+  every push - the internal Jenkins/Forgejo pipeline is unchanged and now
+  documented as the private counterpart. `docker-compose.yml`'s default
+  registry flipped accordingly: GHCR (public) by default, Forgejo
+  (internal) via `.env` override.
 
 ### Pinned
 - Alpine `3.22` (by digest).

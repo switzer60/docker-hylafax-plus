@@ -1,0 +1,105 @@
+name: Build, test, and publish
+
+# Public counterpart to ci/Jenkinsfile: same build -> verify -> smoke test ->
+# scan -> SBOM -> push shape, but running on GitHub Actions and publishing
+# to ghcr.io instead of the internal Forgejo registry. See docs/BUILD.md and
+# ci/JENKINS.md for why the internal pipeline exists separately.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify version pins are consistent
+        run: |
+          chmod +x scripts/check-versions.sh
+          ./scripts/check-versions.sh
+
+      - name: Load version pins
+        id: versions
+        run: |
+          . docker/versions.env
+          echo "hylafax_pkg_version=${HYLAFAX_PKG_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          image="ghcr.io/${{ github.repository }}"
+          sha="${GITHUB_SHA:0:12}"
+          {
+            echo "primary=${image}:sha-${sha}"
+            echo "version=${image}:${{ steps.versions.outputs.hylafax_pkg_version }}"
+            echo "latest=${image}:latest"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: ${{ steps.tags.outputs.primary }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test
+        run: |
+          chmod +x tests/smoke-test.sh docker/entrypoint.sh docker/healthcheck.sh
+          IMAGE=${{ steps.tags.outputs.primary }} ./tests/smoke-test.sh
+
+      - name: Vulnerability scan (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.tags.outputs.primary }}
+          format: table
+          exit-code: '1'
+          severity: CRITICAL
+          ignore-unfixed: true
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.tags.outputs.primary }}
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          upload-artifact: false
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json
+
+      # Everything above runs on PRs too, as a gate. Only a push to main
+      # (never a PR from a fork) gets as far as publishing.
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push "${{ steps.tags.outputs.primary }}"
+          docker tag "${{ steps.tags.outputs.primary }}" "${{ steps.tags.outputs.version }}"
+          docker push "${{ steps.tags.outputs.version }}"
+          docker tag "${{ steps.tags.outputs.primary }}" "${{ steps.tags.outputs.latest }}"
+          docker push "${{ steps.tags.outputs.latest }}"

@@ -1,8 +1,10 @@
 # hylafax+ on Alpine - reference docker-compose.
 #
-# Default path: pull the image Jenkins already built and pushed - no local
-# build needed. `docker compose up -d` after `docker login` to the registry
-# (private image; see ci/JENKINS.md) is enough to get a running container.
+# Default path: pull the public image GitHub Actions builds and publishes
+# on every push (ghcr.io/switzer60/docker-hylafax-plus) - no local build,
+# no login needed, `docker compose up -d` is enough. Point this at a
+# different registry (e.g. an internal Forgejo mirror) by setting REGISTRY /
+# IMAGE_NAMESPACE / IMAGE_NAME / IMAGE_TAG in .env - see .env.example.
 #
 # Building locally instead (e.g. to test a Dockerfile/entrypoint.sh change
 # before it's pushed) is one file away: docker-compose.override.yml adds a
@@ -27,7 +29,7 @@
 # own env var.
 services:
   fax:
-    image: ${REGISTRY:-[redacted]}/${IMAGE_NAMESPACE:-switzer60}/hylafax-plus:${IMAGE_TAG:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:-switzer60}/${IMAGE_NAME:-docker-hylafax-plus}:${IMAGE_TAG:-latest}
     hostname: fax
     restart: unless-stopped
     stop_grace_period: 15s
