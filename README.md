@@ -91,6 +91,7 @@ environment.
 | `.github/workflows/build.yml` | GitHub Actions pipeline: build → verify → smoke test → scan → SBOM → publish to `ghcr.io`, for `linux/amd64` + `linux/arm64`. |
 | `tests/smoke-test.sh` | The real end-to-end test CI (and you, locally) runs against a built image. |
 | `scripts/check-versions.sh` | CI guard against version-pin drift. |
+| `scripts/check-upstream.sh` + `.github/workflows/check-upstream.yml` | Nightly check for newer Alpine/hylafax+/iaxmodem versions; reports via an `upstream-update` issue, never bumps anything itself. |
 
 ## Documentation index
 

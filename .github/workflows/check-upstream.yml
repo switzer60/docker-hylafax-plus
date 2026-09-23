@@ -1,0 +1,71 @@
+name: Check upstream versions
+
+# Nightly: compares docker/versions.env against Alpine (pinned branch, new
+# point releases/branches, edge), Docker Hub, SourceForge, and watched aports
+# merge requests - see scripts/check-upstream.sh for exactly what's checked.
+# Reports only, never bumps: findings go into a single issue labelled
+# `upstream-update`, which gets opened when there's something to report,
+# edited in place (commented on only when the findings actually change), and
+# closed once everything's current again. See docs/BUILD.md#watching-for-updates.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: check-upstream
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check upstream
+        id: check
+        run: |
+          chmod +x scripts/check-upstream.sh
+          ./scripts/check-upstream.sh > "${RUNNER_TEMP}/report.md"
+          cat "${RUNNER_TEMP}/report.md" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Open, update, or close the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          UPDATES: ${{ steps.check.outputs.updates }}
+          FINGERPRINT: ${{ steps.check.outputs.fingerprint }}
+          PARTIAL: ${{ steps.check.outputs.partial }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          label=upstream-update
+          report="$(cat "${RUNNER_TEMP}/report.md")"
+          # shellcheck disable=SC2016 # backticks below are literal Markdown
+          body="$(printf '%s\n\n---\n_Last checked by [this run](%s). Updated nightly by `.github/workflows/check-upstream.yml`; closes itself once all pins are current._\n\n<!-- upstream-check fingerprint: %s -->\n' \
+            "${report}" "${RUN_URL}" "${FINGERPRINT}")"
+          gh label create "${label}" --color FBCA04 --force \
+            --description "New Alpine/hylafax+/iaxmodem versions available (check-upstream workflow)"
+          issue="$(gh issue list --label "${label}" --state open --json number --jq '.[0].number // empty')"
+
+          if [[ "${UPDATES}" == true ]]; then
+            if [[ -z "${issue}" ]]; then
+              gh issue create --title "Upstream updates available" --label "${label}" --body "${body}"
+            else
+              old="$(gh issue view "${issue}" --json body --jq .body |
+                sed -nE 's/.*upstream-check fingerprint: ([0-9a-f]+).*/\1/p')"
+              # Editing the description doesn't notify anyone; a comment does,
+              # so only comment when the findings changed. Skip that on a
+              # partial run so a flaky source can't flap the notifications.
+              gh issue edit "${issue}" --body "${body}"
+              if [[ "${old}" != "${FINGERPRINT}" && "${PARTIAL}" != true ]]; then
+                gh issue comment "${issue}" --body "$(printf 'Findings changed:\n\n%s' "${report}")"
+              fi
+            fi
+          elif [[ -n "${issue}" && "${PARTIAL}" != true ]]; then
+            gh issue close "${issue}" --comment "All pins current as of [this run](${RUN_URL}) - closing."
+          fi

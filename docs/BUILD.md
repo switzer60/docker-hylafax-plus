@@ -221,6 +221,34 @@ re-asking) or fails obviously downstream (missing `etc/config`,
 6. Open a PR. CI runs the same two commands (see
    `.github/workflows/build.yml`) before anything is published.
 
+## Watching for updates
+
+`.github/workflows/check-upstream.yml` runs
+[`scripts/check-upstream.sh`](../scripts/check-upstream.sh) nightly (and
+on demand from the Actions tab) and compares `docker/versions.env` against:
+
+| Source | Finding | Means |
+|---|---|---|
+| Alpine `APKINDEX` for the pinned branch (`x86_64`, `aarch64`) | `hylafaxplus`/`iaxmodem` there differs from the pin | **Actionable.** Alpine only indexes the latest build, so the pinned one is gone from the mirror and the current pins will stop building. |
+| Alpine release list + Docker Hub | New point release on the pinned branch, the pinned tag re-pushed to a new digest, or a newer stable branch (with the package versions it ships) | **Actionable.** |
+| Alpine edge | Newer package than the pin | Heads-up: coming at the next Alpine release. |
+| SourceForge (`hylafax`, `iaxmodem`) | Newer upstream release than the pinned package | Heads-up: nothing to do until Alpine packages it. |
+| aports merge requests listed in `WATCH_MRS` (in the script) | Merged or closed | Heads-up. Open MRs are listed under "Watching" but don't count as a finding. |
+
+Findings go into a single issue labelled `upstream-update`: opened when
+there's something to report, edited in place on later runs (a comment -
+and so a notification - only when the findings actually change), and
+closed automatically once everything's current. It never touches the pins;
+bumping stays the deliberate, smoke-tested steps above. Alpine or Docker Hub
+being unreachable fails the run; SourceForge or GitLab being unreachable is
+only a warning in the report, and never flaps the issue.
+
+Run it locally with `./scripts/check-upstream.sh`; point `VERSIONS_FILE` at
+another env file to see what it would report for different pins.
+
+GitHub disables scheduled workflows in a public repo after 60 days with no
+commits. It emails a warning first; re-enable it from the Actions tab.
+
 ## Building locally without CI
 
 `docker-compose.override.yml` is what makes this a local build instead of a

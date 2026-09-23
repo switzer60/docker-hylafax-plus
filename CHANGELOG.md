@@ -50,6 +50,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   full smoke test re-run against the new build. `ALPINE_VERSION` now
   carries the full point release, and the APKBUILD provenance labels link
   to the matching `v3.24.2` aports tag.
+- Nightly upstream check (`.github/workflows/check-upstream.yml`,
+  `scripts/check-upstream.sh`): compares the pins against Alpine (pinned
+  branch, new point releases/branches, edge), Docker Hub, SourceForge, and
+  watched aports merge requests (currently !108638, iaxmodem 1.3.5), and
+  reports through a single self-closing `upstream-update` issue. Report
+  only - never bumps the pins. See docs/BUILD.md#watching-for-updates.
 
 ### Pinned
 - Alpine `3.24.2` (by digest).
