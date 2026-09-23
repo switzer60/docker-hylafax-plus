@@ -60,7 +60,7 @@ MODEM_1_FAX_NUMBER=+19195551212
 
 ```
 starting iaxmodem for ttyIAX0 -> IAX2 server asterisk.internal.example.com:4569 as peer 'fax1'
-FaxGetty[..]: OPEN /dev/ttyIAX0  HylaFAX (tm) Version 7.0.10
+FaxGetty[..]: OPEN /dev/ttyIAX0  HylaFAX (tm) Version 7.0.11
 FaxGetty[..]: MODEM WWW.SOFT-SWITCH.ORG spandsp/...
 ```
 

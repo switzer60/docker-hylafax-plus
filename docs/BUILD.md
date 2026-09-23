@@ -8,10 +8,11 @@ the same thing back.
 ## Why a distro package instead of compiling from source
 
 hylafax+ is not in Alpine's default (`main`) repo, but it **is** in
-`community` as of Alpine 3.21 (`hylafaxplus-7.0.9-r2`) and 3.22
-(`hylafaxplus-7.0.10-r0`), maintained upstream by the Alpine packagers, built
-against musl, with security updates tracked through Alpine's normal
-advisory process.
+`community` as of Alpine 3.21 (`hylafaxplus-7.0.9-r2`), 3.22
+(`hylafaxplus-7.0.10-r0`), and 3.24 (`hylafaxplus-7.0.11-r0`, what this
+image pins), maintained upstream by the Alpine packagers, built against
+musl, with security updates tracked through Alpine's normal advisory
+process.
 
 We use that package instead of compiling hylafax+ from its SourceForge
 tarball for three reasons:
@@ -28,9 +29,11 @@ tarball for three reasons:
    a complete, public record of exactly what's in the package and how it was
    built. Nothing is hidden in a multi-hundred-line Dockerfile `RUN` block.
 
-The tradeoff: we're one version behind whatever hylafax+'s own release page
-shows (7.0.10 via the Alpine 3.22 package vs. 7.0.11 upstream as of this
-writing). We accept that explicitly rather than silently.
+The tradeoff: we're always however many releases behind whatever Alpine's
+packagers have gotten to - currently none; 7.0.11-r0 (the Alpine 3.24
+package) matches hylafax+'s own latest release as of this writing. That
+won't always be true, and we accept it explicitly rather than silently
+when it isn't.
 
 ## The upstream packaging recipe
 
@@ -39,10 +42,10 @@ and solved the musl-specific rough edges in the process. Rather than
 duplicating that work here (a copy that would just go stale), the recipe
 itself is the reference:
 
-https://gitlab.alpinelinux.org/alpine/aports/-/blob/v3.22.0/community/hylafaxplus/APKBUILD
+https://gitlab.alpinelinux.org/alpine/aports/-/blob/v3.24.2/community/hylafaxplus/APKBUILD
 
-Pinned to the `v3.22.0` tag, not `master`, so it always matches what
-`alpine:3.22` actually installs. Maintained by Francesco Colista
+Pinned to the `v3.24.2` tag, not `master`, so it always matches what
+`alpine:3.24.2` actually installs. Maintained by Francesco Colista
 (`fcolista@alpinelinux.org`) - our thanks to him and Alpine's packaging
 community for doing and maintaining this work; this image is considerably
 simpler and more trustworthy for it existing.
@@ -67,9 +70,9 @@ these drift apart - see the "Verify version pins are consistent" step in
 
 | Pin | Value | What it guarantees |
 |---|---|---|
-| `ALPINE_VERSION` + `ALPINE_DIGEST` | `3.22` / `sha256:5291449c...` | The base image is referenced **by digest**, not just tag. `alpine:3.22` can be repointed by Docker Hub; the digest cannot. |
-| `HYLAFAX_PKG_VERSION` | `7.0.10-r0` | `apk add hylafaxplus=7.0.10-r0` - fails loudly (not silently upgrades) if that exact build is unavailable. |
-| `IAXMODEM_PKG_VERSION` | `1.3.4-r0` | Same guarantee for the iaxmodem package. |
+| `ALPINE_VERSION` + `ALPINE_DIGEST` | `3.24.2` / `sha256:294b683c...` | The base image is referenced **by digest**, not just tag. `alpine:3.24.2` can be repointed by Docker Hub; the digest cannot. |
+| `HYLAFAX_PKG_VERSION` | `7.0.11-r0` | `apk add hylafaxplus=7.0.11-r0` - fails loudly (not silently upgrades) if that exact build is unavailable. |
+| `IAXMODEM_PKG_VERSION` | `1.3.4-r1` | Same guarantee for the iaxmodem package. |
 
 Every one of these pins is also baked into the image itself as an OCI
 label - you don't need this repo checked out to find out what's inside a
@@ -94,10 +97,10 @@ respectively - the same provenance links documented in prose above.
 ### The honest limit of this reproducibility
 
 Alpine does not keep an indefinite, queryable archive of every historical
-package build the way Debian's snapshot.debian.org does. `v3.22/community`
+package build the way Debian's snapshot.debian.org does. `v3.24/community`
 keeps receiving updates until that branch's EOL; an exact `apk` version
 string can in principle be garbage-collected from the mirrors after enough
-time passes, at which point `apk add hylafaxplus=7.0.10-r0` fails outright
+time passes, at which point `apk add hylafaxplus=7.0.11-r0` fails outright
 (loud failure, not silent drift - see the guarantee above) rather than
 rebuilding.
 
@@ -119,7 +122,7 @@ Three tags get published, each answering a different question:
 |---|---|---|
 | `latest` | `latest` | "give me whatever's current on `main`" - floating, moves on every push. |
 | `sha-<short-sha>` | `sha-c9339754c201` | "give me exactly this commit" - immutable, the real reproducibility pin (see above). |
-| `alpine-<ver>_hylafaxplus-<ver>_iaxmodem-<ver>` | `alpine-3.22_hylafaxplus-7.0.10-r0_iaxmodem-1.3.4-r0` | "what's actually inside, at a glance" - built directly from the three `docker/versions.env` pins, no separate release process to remember. |
+| `alpine-<ver>_hylafaxplus-<ver>_iaxmodem-<ver>` | `alpine-3.24.2_hylafaxplus-7.0.11-r0_iaxmodem-1.3.4-r1` | "what's actually inside, at a glance" - built directly from the three `docker/versions.env` pins, no separate release process to remember. |
 
 The composite tag updates whenever any of the three `docker/versions.env`
 pins change, and otherwise stays put. It's a label, not a strict content
@@ -134,8 +137,8 @@ The public image (`ghcr.io/switzer60/docker-hylafax-plus`, published by
 `docker compose up` picks the right one automatically. This works because
 nothing in the build compiles anything: `hylafaxplus` and `iaxmodem` are
 both published by Alpine for `x86_64`, `aarch64`, `armv7`, and `armhf`
-(checked directly against `v3.22/main` and `v3.22/community`'s
-`APKINDEX` before this was wired up), and the pinned `ALPINE_DIGEST` above
+(checked directly against `v3.24/main` and `v3.24/community`'s
+`APKINDEX`), and the pinned `ALPINE_DIGEST` above
 is itself a multi-platform OCI image index, not a single-arch manifest -
 `docker manifest inspect` on it shows `amd64`, `arm/v6`, and `arm64`
 children. `docker/Dockerfile` needed zero changes for multi-arch; only the
@@ -190,7 +193,7 @@ verify against a new `HYLAFAX_PKG_VERSION`, or re-derive the answers file if
 a new version changes the prompt sequence:
 
 ```sh
-docker run --rm -it alpine:3.22 sh -c '
+docker run --rm -it alpine:3.24.2 sh -c '
   apk add --no-cache hylafaxplus=<new-version> bash openssl
   faxsetup
 '

@@ -42,8 +42,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   old tag silently moved on every commit, not just real package version
   bumps - a real bug, since anyone pinning it for stability was actually
   tracking `latest` under a misleading name. See docs/BUILD.md#tagging.
+- Bumped Alpine 3.22 → 3.24.2, `hylafaxplus` 7.0.10-r0 → 7.0.11-r0 (matches
+  hylafax+'s own current upstream release), `iaxmodem` 1.3.4-r0 → 1.3.4-r1
+  (packaging revision only; 1.3.4-r0 isn't in 3.24). Verified before
+  bumping: both packages exist for 3.24 on all four architectures Alpine
+  builds them for, and the new base digest is a multi-arch image index;
+  full smoke test re-run against the new build. `ALPINE_VERSION` now
+  carries the full point release, and the APKBUILD provenance labels link
+  to the matching `v3.24.2` aports tag.
 
 ### Pinned
-- Alpine `3.22` (by digest).
-- `hylafaxplus` `7.0.10-r0`.
-- `iaxmodem` `1.3.4-r0`.
+- Alpine `3.24.2` (by digest).
+- `hylafaxplus` `7.0.11-r0`.
+- `iaxmodem` `1.3.4-r1`.

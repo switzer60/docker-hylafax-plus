@@ -9,13 +9,13 @@
 #   ALPINE_VERSION / ALPINE_DIGEST   base image, pinned by digest
 #   HYLAFAX_PKG_VERSION              exact `apk` package version (fails loudly
 #                                    if that exact version is no longer served)
-ARG ALPINE_VERSION=3.22
-ARG ALPINE_DIGEST=sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
+ARG ALPINE_VERSION=3.24.2
+ARG ALPINE_DIGEST=sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
 
 FROM alpine:${ALPINE_VERSION}@${ALPINE_DIGEST}
 
-ARG HYLAFAX_PKG_VERSION=7.0.10-r0
-ARG IAXMODEM_PKG_VERSION=1.3.4-r0
+ARG HYLAFAX_PKG_VERSION=7.0.11-r0
+ARG IAXMODEM_PKG_VERSION=1.3.4-r1
 # ALPINE_VERSION/ALPINE_DIGEST were only in scope for the FROM line above -
 # re-declared (bare, no new default) to pull their existing values into this
 # build stage so the LABELs below can actually reference them; without this
@@ -38,9 +38,9 @@ LABEL org.opencontainers.image.title="hylafax+" \
       org.opencontainers.image.base.digest="${ALPINE_DIGEST}" \
       io.github.switzer60.docker-hylafax-plus.alpine-version="${ALPINE_VERSION}" \
       io.github.switzer60.docker-hylafax-plus.hylafaxplus-version="${HYLAFAX_PKG_VERSION}" \
-      io.github.switzer60.docker-hylafax-plus.hylafaxplus-apk-source="https://gitlab.alpinelinux.org/alpine/aports/-/blob/v${ALPINE_VERSION}.0/community/hylafaxplus/APKBUILD" \
+      io.github.switzer60.docker-hylafax-plus.hylafaxplus-apk-source="https://gitlab.alpinelinux.org/alpine/aports/-/blob/v${ALPINE_VERSION}/community/hylafaxplus/APKBUILD" \
       io.github.switzer60.docker-hylafax-plus.iaxmodem-version="${IAXMODEM_PKG_VERSION}" \
-      io.github.switzer60.docker-hylafax-plus.iaxmodem-apk-source="https://gitlab.alpinelinux.org/alpine/aports/-/blob/v${ALPINE_VERSION}.0/main/iaxmodem/APKBUILD"
+      io.github.switzer60.docker-hylafax-plus.iaxmodem-apk-source="https://gitlab.alpinelinux.org/alpine/aports/-/blob/v${ALPINE_VERSION}/main/iaxmodem/APKBUILD"
 
 # hylafaxplus     - the fax server itself (faxq, hfaxd, faxgetty, sendfax, ...)
 # iaxmodem        - software modem over IAX2/VoIP; the default, hardware-free
